@@ -99,3 +99,75 @@ describe("Given I am connected as an employee", () => {
   })
 })
 
+describe('handleClickNewBill', () => {
+  it('should navigate to NewBill route when clicked', () => {
+    const onNavigateMock = jest.fn();
+    const billsInstance = new Bills({ document: document, onNavigate: onNavigateMock });
+
+    billsInstance.handleClickNewBill();
+
+    expect(onNavigateMock).toHaveBeenCalledWith(ROUTES_PATH['NewBill']);
+  });
+});
+
+describe('handleClickIconEye', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="modaleFile">
+        <div class="modal-body"></div>
+      </div>
+    `;
+  });
+
+  it('should show modal with bill image when clicked', () => {
+    const billsInstance = new Bills({ document: document });
+
+    const icon = document.createElement('div');
+    icon.setAttribute('data-bill-url', 'https://example.com/bill.jpg');
+
+    billsInstance.handleClickIconEye(icon);
+
+    const modalBody = document.querySelector('#modaleFile .modal-body');
+    expect(modalBody.innerHTML).toContain('<img');
+  });
+});
+
+describe('getBills', () => {
+  it('should return formatted bills from the store', async () => {
+    const fakeSnapshot = [
+      { date: '2023-01-01', status: 'paid' },
+      { date: '2023-01-02', status: 'pending' }
+    ];
+    const fakeStore = {
+      bills: jest.fn(() => ({
+        list: jest.fn(() => Promise.resolve(fakeSnapshot))
+      }))
+    };
+
+    const billsInstance = new Bills({ store: fakeStore });
+
+    const result = await billsInstance.getBills();
+
+    expect(result).toHaveLength(2);
+    expect(result[0].date).toEqual(expect.any(String));
+    expect(result[0].status).toEqual(expect.any(String));
+    expect(result).toEqual(fakeSnapshot);
+  });
+
+  it('should return unformatted date if formatDate fails', async () => {
+    const fakeSnapshot = [{ date: 'invalid-date', status: 'paid' }];
+    const fakeStore = {
+      bills: jest.fn(() => ({
+        list: jest.fn(() => Promise.resolve(fakeSnapshot))
+      }))
+    };
+
+    const billsInstance = new Bills({ store: fakeStore });
+
+    const result = await billsInstance.getBills();
+
+    expect(result).toHaveLength(1);
+    expect(result[0].date).toEqual('invalid-date');
+    expect(result[0].status).toEqual(expect.any(String));
+  });
+});

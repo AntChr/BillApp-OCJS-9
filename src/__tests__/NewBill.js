@@ -16,7 +16,6 @@ describe("Given I am connected as an employee", () => {
     })
   })
 })
-
 describe('NewBill', () => {
   beforeEach(() => {
     document.body.innerHTML = `
