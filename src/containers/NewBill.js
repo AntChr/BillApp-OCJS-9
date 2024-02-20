@@ -26,7 +26,10 @@ export default class NewBill {
     const email = JSON.parse(localStorage.getItem("user")).email
     formData.append('file', file)
     formData.append('email', email)
-
+    if (!file) {
+      alert('Seuls les fichiers .jpg, .jpeg et .png sont autorisés.');
+      return;
+    }
     if (file) {
       if (!allowedFileTypes.includes(file.type)) {
         alert('Seuls les fichiers .jpg, .jpeg et .png sont autorisés.');
@@ -56,7 +59,7 @@ handleSubmit = e => {
   const file = fileInput.files[0];
   const allowedFileTypes = ['image/jpeg', 'image/jpg', 'image/png'];
 
-  if (!allowedFileTypes.includes(file.type)) {
+  if (!file || !allowedFileTypes.includes(file.type)) {
     alert('Seuls les fichiers .jpg, .jpeg et .png sont autorisés.');
     return;
   }
