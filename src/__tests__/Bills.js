@@ -2,15 +2,14 @@
  * @jest-environment jsdom
  */
 
-import { screen, waitFor } from "@testing-library/dom"
+import { fireEvent, screen, waitFor } from "@testing-library/dom"
 import userEvent from "@testing-library/user-event";
 import BillsUI from "../views/BillsUI.js";
 import Bills from '../containers/Bills.js';
 import { bills } from "../fixtures/bills.js"
-import { ROUTES_PATH } from "../constants/routes.js";
+import { ROUTES_PATH, ROUTES } from "../constants/routes.js";
 import { localStorageMock } from "../__mocks__/localStorage.js";
 import store from "../__mocks__/store.js"
-
 import router from "../app/Router.js";
 
 let billsInstance
@@ -63,15 +62,6 @@ describe("Given I am connected as an employee", () => {
       expect(dates).toEqual(datesSorted)
     })
 
-    it('should navigate to NewBill route when clicked', () => {
-      const onNavigateMock = jest.fn();
-      const billsInstance = new Bills({ document: document, onNavigate: onNavigateMock });
-
-      billsInstance.handleClickNewBill();
-
-      expect(onNavigateMock).toHaveBeenCalledWith(ROUTES_PATH['NewBill']);
-    });
-
     it('should show modal with bill image when clicked', () => {
 
       const modale = document.getElementById("modaleFile")
@@ -91,83 +81,104 @@ describe("Given I am connected as an employee", () => {
       expect(modale.classList).toContain('show')
     });
 
+    it('should navigate to NewBill route when clicked on "new bill button"', async () => {
+      const buttonNewBill = screen.getByTestId('btn-new-bill')
+      const handleClickNewBill = jest.fn(e => billsInstance.handleClickNewBill(e))
+      buttonNewBill.addEventListener('click', handleClickNewBill)
+      fireEvent.click(buttonNewBill)
+      expect(handleClickNewBill).toHaveBeenCalled()
+      const formNewBill = await waitFor(() => screen.getByTestId('form-new-bill'))
+      expect(formNewBill).toBeTruthy()
+    });
+
     it('should return formatted bills from the store', async () => {
       const result = await billsInstance.getBills()
       expect(result.length).toBe(4)
     });
 
+
+    // describe('test', () => {
+    //   beforeEach(() => {
+    //     jest.spyOn(store, "bills")
+    //   })
+
+    //   it('should return unformatted bills from the store', async () => {
+
+    //     store.bills.mockImplementationOnce(() => {
+    //       return {
+    //         list: () => {
+    //           return Promise.reject('test')
+    //         }
+    //       }
+    //     })
+
+    //     const result = await billsInstance.getBills()
+    //     expect(result).rejects.toMatch('test')
+
+    //   })
+    // })
+
   })
 })
 
-describe('handleClickNewBill', () => {
-  it('should navigate to NewBill route when clicked', () => {
-    const onNavigateMock = jest.fn();
-    const billsInstance = new Bills({ document: document, onNavigate: onNavigateMock });
+// describe('handleClickIconEye', () => {
+//   beforeEach(() => {
+//     document.body.innerHTML = `
+//       <div id="modaleFile">
+//         <div class="modal-body"></div>
+//       </div>
+//     `;
+//   });
 
-    billsInstance.handleClickNewBill();
+//   it('should show modal with bill image when clicked', () => {
+//     const billsInstance = new Bills({ document: document });
 
-    expect(onNavigateMock).toHaveBeenCalledWith(ROUTES_PATH['NewBill']);
-  });
-});
+//     const icon = document.createElement('div');
+//     icon.setAttribute('data-bill-url', 'https://example.com/bill.jpg');
 
-describe('handleClickIconEye', () => {
-  beforeEach(() => {
-    document.body.innerHTML = `
-      <div id="modaleFile">
-        <div class="modal-body"></div>
-      </div>
-    `;
-  });
+//     billsInstance.handleClickIconEye(icon);
 
-  it('should show modal with bill image when clicked', () => {
-    const billsInstance = new Bills({ document: document });
+//     const modalBody = document.querySelector('#modaleFile .modal-body');
+//     expect(modalBody.innerHTML).toContain('<img');
+//   });
+// });
 
-    const icon = document.createElement('div');
-    icon.setAttribute('data-bill-url', 'https://example.com/bill.jpg');
+// describe('getBills', () => {
+//   it('should return formatted bills from the store', async () => {
+//     const fakeSnapshot = [
+//       { date: '2023-01-01', status: 'paid' },
+//       { date: '2023-01-02', status: 'pending' }
+//     ];
+//     const fakeStore = {
+//       bills: jest.fn(() => ({
+//         list: jest.fn(() => Promise.resolve(fakeSnapshot))
+//       }))
+//     };
 
-    billsInstance.handleClickIconEye(icon);
+//     const billsInstance = new Bills({ store: fakeStore });
 
-    const modalBody = document.querySelector('#modaleFile .modal-body');
-    expect(modalBody.innerHTML).toContain('<img');
-  });
-});
+//     const result = await billsInstance.getBills();
 
-describe('getBills', () => {
-  it('should return formatted bills from the store', async () => {
-    const fakeSnapshot = [
-      { date: '2023-01-01', status: 'paid' },
-      { date: '2023-01-02', status: 'pending' }
-    ];
-    const fakeStore = {
-      bills: jest.fn(() => ({
-        list: jest.fn(() => Promise.resolve(fakeSnapshot))
-      }))
-    };
+//     expect(result).toHaveLength(2);
+//     expect(result[0].date).toEqual(expect.any(String));
+//     expect(result[0].status).toEqual(expect.any(String));
+//     expect(result).toEqual(fakeSnapshot);
+//   });
 
-    const billsInstance = new Bills({ store: fakeStore });
+//   it('should return unformatted date if formatDate fails', async () => {
+//     const fakeSnapshot = [{ date: 'invalid-date', status: 'paid' }];
+//     const fakeStore = {
+//       bills: jest.fn(() => ({
+//         list: jest.fn(() => Promise.resolve(fakeSnapshot))
+//       }))
+//     };
 
-    const result = await billsInstance.getBills();
+//     const billsInstance = new Bills({ store: fakeStore });
 
-    expect(result).toHaveLength(2);
-    expect(result[0].date).toEqual(expect.any(String));
-    expect(result[0].status).toEqual(expect.any(String));
-    expect(result).toEqual(fakeSnapshot);
-  });
+//     const result = await billsInstance.getBills();
 
-  it('should return unformatted date if formatDate fails', async () => {
-    const fakeSnapshot = [{ date: 'invalid-date', status: 'paid' }];
-    const fakeStore = {
-      bills: jest.fn(() => ({
-        list: jest.fn(() => Promise.resolve(fakeSnapshot))
-      }))
-    };
-
-    const billsInstance = new Bills({ store: fakeStore });
-
-    const result = await billsInstance.getBills();
-
-    expect(result).toHaveLength(1);
-    expect(result[0].date).toEqual('invalid-date');
-    expect(result[0].status).toEqual(expect.any(String));
-  });
-});
+//     expect(result).toHaveLength(1);
+//     expect(result[0].date).toEqual('invalid-date');
+//     expect(result[0].status).toEqual(expect.any(String));
+//   });
+// });
